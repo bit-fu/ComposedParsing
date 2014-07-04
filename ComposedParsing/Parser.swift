@@ -24,11 +24,15 @@ protocol Lexer
     /// Consumes & returns the next token.
     func next () -> Token?
 
+    /// Returns the current position in the underlying input stream.
     func tell () -> Int
 
+    /// Moves to the given position in the underlying input stream,
+    /// undoing token consumption from that position onward.
     func seek (Int)
 
     /// Returns `true` if all tokens have been consumed.
+    /// Note that a `seek()` might revert this state.
     func done () -> Bool
 }
 
