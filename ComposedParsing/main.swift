@@ -65,7 +65,7 @@ arithmetic.rule("sum", parses:
 
 arithmetic.rule("expr", parses: "sum")
 
-let tokenSource = ArrayLexer(tokens:[("(",""), ("Num", 1), ("-",""), ("Num", 6), (")",""), ("/",""), ("+",""), ("Num", 4)])
+let tokenSource = ArrayLexer(tokens:[("(",""), ("Num",1), ("-",""), ("Num",6), (")",""), ("/",""), ("+",""), ("Num",4)])
 
 var rule = "expr"<!
 var val: Parser.Result
@@ -78,7 +78,6 @@ for _ in 1..100
 let t1 = NSDate()
 let dt = t1.timeIntervalSinceDate(t0)
 println("∆t = \(dt) s\n\(val)")
-
 
 
 /* ~ main.swift ~ */

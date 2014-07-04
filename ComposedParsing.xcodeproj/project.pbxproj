@@ -26,7 +26,6 @@
 
 /* Begin PBXFileReference section */
 		4029EB911960439C004ABD48 /* ArrayLexer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ArrayLexer.swift; sourceTree = "<group>"; };
-		4029EB9319608FE6004ABD48 /* StringLexer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringLexer.swift; sourceTree = "<group>"; };
 		40D20025195F451C00D8B49C /* ComposedParsing */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ComposedParsing; sourceTree = BUILT_PRODUCTS_DIR; };
 		40D20028195F451C00D8B49C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		40D2002F195F455C00D8B49C /* Parser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
@@ -65,7 +64,6 @@
 				40D20028195F451C00D8B49C /* main.swift */,
 				40D2002F195F455C00D8B49C /* Parser.swift */,
 				4029EB911960439C004ABD48 /* ArrayLexer.swift */,
-				4029EB9319608FE6004ABD48 /* StringLexer.swift */,
 			);
 			path = ComposedParsing;
 			sourceTree = "<group>";

@@ -37,7 +37,6 @@ class Parser
 {
     typealias Value  = AnyObject
     typealias Result = Value?
-    typealias Rule   = (Parser, Lexer) -> Result
     typealias Getter = (Int) -> Value
     typealias Action = (Getter) -> Result
 
