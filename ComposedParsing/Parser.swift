@@ -142,8 +142,8 @@ class Parser
         case .Disjunction(let body) :
             let stkptr = _stkptr
             let mark = lexer.tell()
-            let count = body.count
-            for index in 0...count
+            let final = body.count - 1
+            for index in 0...final
             {
                 let result: Result = execute(element(body, index), lexer)
                 if result { return result }
