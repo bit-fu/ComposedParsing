@@ -58,7 +58,7 @@ arithmetic.rule("term", parses:
     "(" &> "expr" &> ")" &> { $ in $(2) }
  |> "Num")
 
-let tokenSource = ArrayLexer(tokens:[("(",""), ("Num",1), ("-",""), ("Num",6), (")",""), ("/",""), ("+",""), ("Num",4)])
+let tokenSource = ArrayLexer(tokens:[("(",""),("Num",6),("-",""),("Num",1),(")",""), ("/",""), ("+",""),("Num",2), ("/",""), ("-",""),("Num",2)])
 
 var rule = "expr"<!
 var val: Parser.Result
