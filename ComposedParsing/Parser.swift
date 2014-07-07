@@ -177,16 +177,14 @@ class Parser
             return .Disjunction([])     // Constant Failure.
 
         case .Conjunction(let body) :
-            let count = body.count
-            for index in 0..count
+            for index in 0..body.count
             {
                 body[index] = compile(body[index], ntNames)
             }
             return rule
 
         case .Disjunction(let body) :
-            let count = body.count
-            for index in 0..count
+            for index in 0..body.count
             {
                 body[index] = compile(body[index], ntNames)
             }
@@ -244,8 +242,7 @@ class Parser
         case .Disjunction(let body) :
             let stkptr = _stkptr
             let mark = lexer.tell()
-            let count = body.count
-            for index in 0..count
+            for index in 0..body.count
             {
                 let result = execute(body[index], lexer)
                 if result { return result }
@@ -272,7 +269,7 @@ class Parser
 
 operator prefix  =< {}                                    // Transparent
 operator prefix  =! {}                                    // Transparent
-operator infix   &> { associativity left precedence 30 }  // Conjunction
+operator infix   &> { associativity left precedence 40 }  // Conjunction
 operator infix   <! { associativity left precedence 30 }  // Termination & Computation
 operator infix   |> { associativity left precedence 20 }  // Disjunction
 operator postfix <! {}                                    // Termination
