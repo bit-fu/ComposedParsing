@@ -58,5 +58,6 @@ This project was inspired by  [swift-parser-generator](https://github.com/dparne
 
 ## Known Shortcomings
 
-- The parser doesn't do left-binding rules naturally.  Especially, `parser.rule("foo", parses: "foo" |> ...)` will create a Stack Overflow® via endless recursion.
-- It doesn't create independent static code but a "parse tree" containing your "live" action code blocks (Swift-compiled closures) that must be interpreted by a `Parser` method to perform a parse.  OTOH, those closures should have no problem accessing common resources from the grammar's definition environment.
+- There are no warnings for any conflicts and syntax errors in rule definitions will produce strange messages.
+- The parser doesn't do left-binding rules naturally.  Especially, `parser.rule("foo", parses: "foo" |> ...)` will create a Stack Overflow® via endless recursion (and without prior warning).
+- It doesn't create independent static code but a "parse tree" containing your action code blocks (Swift-compiled closures) that must be interpreted by a `Parser` method to perform a parse.  OTOH, those closures should have no problem accessing common resources from the grammar's definition environment.
