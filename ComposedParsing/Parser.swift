@@ -39,28 +39,96 @@ protocol Lexer
 /// A Parser using rules made of composable functions.
 class Parser
 {
-    typealias Value  = AnyObject
+    /// —— Public Types ——
+
+    // Values that occur during parsing.  Those are terminal values
+    // from the lexer as well as parse results of nonterminal rules
+    // and return values from your action code blocks.
+    typealias Value  = NSObject
+
+    // Actual rule result type includes the possibility of failure.
     typealias Result = Value?
+
+    // Interface that lets your action code blocks access the parse
+    // results of previous elements in the current nonterminal rule.
+    // Naming the Getter as `$`, you access the first value with
+    // `$(1)`.  `$(0)` would access the last value that was parsed
+    // before the current rule became active.  It is your responsibility
+    // to keep the index argument to the Getter in a sensible range.
     typealias Getter = (Int) -> Value
+
+    // Your action code blocks.  Note that you may return nil to signal failure.
     typealias Action = (Getter) -> Result
 
+    /// —— Public Methods ——
+
+    /// Constructs a parser for a grammar with the given terminal symbols.
+    init (terminals: String[])
+    {
+        _tsRule = Dictionary()
+        _ntRule = Dictionary()
+        _values = []
+        _stkptr = 0
+        _ntbase = 0
+
+        for name in terminals
+        {
+            _tsRule[name] = true
+        }
+    }
+
+    /// Defines a parsing rule for the named nonterminal in the grammar.
+    func rule (name: String, parses rule: Rule)
+    {
+        _ntRule[name] = rule
+    }
+
+    /// Defines a parsing rule for the named nonterminal in the grammar.
+    func rule (name: String, parses symbol: String)
+    {
+        rule(name, parses: .RulePromise(symbol))
+    }
+
+    /// Parses the defined grammar starting with the given rule.
+    func start (rule: Rule, _ lexer: Lexer)
+    -> Result
+    {
+        _values = []
+        _stkptr = 0
+        _ntbase = 0
+
+        return execute(compile(rule), lexer)
+    }
+
+    /// Parses the defined grammar with the given start symbol.
+    func start (symbol: String, _ lexer: Lexer)
+    -> Result
+    {
+        return start(.RulePromise(symbol), lexer)
+    }
+
+    /// —— Private Parts ——
+
     // Abstraction for nonterminal elements.
-    enum Part
+    enum Rule
     {
         case RulePromise(String)
         case TerminalLex(String)
-        case NestedParse(Part[])    // Boxing Array
-        case Conjunction(Part[])    // Actual Array
-        case Disjunction(Part[])    // Actual Array
+        case NestedParse(Rule[])    // Boxing Array
+        case Conjunction(Rule[])    // Actual Array
+        case Disjunction(Rule[])    // Actual Array
         case Computation(Action[])  // Boxing Array
-        case Termination(Part[])    // Boxing Array
+        case Termination(Rule[])    // Boxing Array
     }
 
-    var _ruleMap: Dictionary<String, Bool>
-    var _partMap: Dictionary<String, Part>
-    var _values:  Value[]
-    var _stkptr:  Int
-    var _ntbase:  Int
+    var _tsRule: Dictionary<String, Bool>
+    var _ntRule: Dictionary<String, Rule>
+    var _values: Value[]
+    var _stkptr: Int
+    var _ntbase: Int
+
+    // Getter for the current NT's parse results.
+    @lazy var getter: Getter = { [unowned self] index in self._values[self._ntbase + index - 1] }
 
     func store (value: Value)
     {
@@ -75,42 +143,77 @@ class Parser
         ++_stkptr
     }
 
-    // Rule interpreter.
-    func execute (part: Part, _ lexer: Lexer)
-    -> Result
+    // Destructive rule preprocessor.
+    func compile (rule: Rule, _ ntNames: String[] = [])
+    -> Rule
     {
-        func resolve (name: String) -> Part
-        {
-            if let _    = _ruleMap[name] { return .TerminalLex(name)   }
-            if let part = _partMap[name] { return .NestedParse([part]) }
-
-            println("Parser error: Undefined symbol “\(name)”")
-            return .Disjunction([])     // Constant Failure.
-        }
-        
-        func element (body: Part[], index: Int) -> Part
-        {
-            var part = body[index]
-            switch part
-            {
-            case .RulePromise(let name) :
-                part = resolve(name)
-                body[index] = part
-            default :
-                nil
-            }
-            return part
-        }
-
-        switch part
+        switch rule
         {
         case .RulePromise(let name) :
-            return execute(resolve(name), lexer)
-            
-        case .TerminalLex(let name) :
-            if let (term, value: Value) = lexer.next()
+            if let _ = _tsRule[name]
             {
-                if term == name
+                return .TerminalLex(name)
+            }
+            if let namedRule = _ntRule[name]
+            {
+                var newRule = namedRule
+                if !contains(ntNames, name)
+                {
+                    var moreNames = ntNames.copy()
+                    moreNames.append(name)
+                    newRule = compile(namedRule, moreNames)
+                }
+                switch newRule
+                {
+                case .NestedParse(_) :
+                    break
+                default :
+                    newRule = .NestedParse([newRule])
+                }
+                _ntRule[name] = newRule
+                return newRule
+            }
+            println("Parser error: Undefined symbol “\(name)”")
+            return .Disjunction([])     // Constant Failure.
+
+        case .Conjunction(let body) :
+            let count = body.count
+            for index in 0..count
+            {
+                body[index] = compile(body[index], ntNames)
+            }
+            return rule
+
+        case .Disjunction(let body) :
+            let count = body.count
+            for index in 0..count
+            {
+                body[index] = compile(body[index], ntNames)
+            }
+            return rule
+
+        case .Termination(let ruleBox) :
+            ruleBox[0] = compile(ruleBox[0], ntNames)
+            return rule
+
+        default :
+            return rule
+        }
+    }
+
+    // Rule interpreter.
+    func execute (rule: Rule, _ lexer: Lexer)
+    -> Result
+    {
+        switch rule
+        {
+        case .RulePromise(_) :
+            return execute(compile(rule), lexer)
+
+        case .TerminalLex(let name) :
+            if let (terminal, value) = lexer.next()
+            {
+                if terminal == name
                 {
                     store(value)
                     return value
@@ -118,95 +221,48 @@ class Parser
             }
             return nil
 
-        case .NestedParse(let partBox) :
+        case .NestedParse(let ruleBox) :
             let stkptr = _stkptr
             let ntbase = _ntbase
             _ntbase = stkptr
-            let result: Result = execute(partBox[0], lexer)
+            let result = execute(ruleBox[0], lexer)
             _stkptr = stkptr
             _ntbase = ntbase
-            if let value: Value = result { store(value) }
+            if let value = result { store(value) }
             return result
-            
+
         case .Conjunction(let body) :
             var index = 0
-            let limit = body.count
+            let count = body.count
             var latest: Result = true
-            while latest && index < limit
+            while latest && index < count
             {
-                latest = execute(element(body, index), lexer)
-                ++index
+                latest = execute(body[index++], lexer)
             }
             return latest
-            
+
         case .Disjunction(let body) :
             let stkptr = _stkptr
             let mark = lexer.tell()
-            let final = body.count - 1
-            for index in 0...final
+            let count = body.count
+            for index in 0..count
             {
-                let result: Result = execute(element(body, index), lexer)
+                let result = execute(body[index], lexer)
                 if result { return result }
                 _stkptr = stkptr
                 lexer.seek(mark)
             }
             return nil
-            
+
         case .Computation(let actionBox) :
-            return actionBox[0](getter)
-            
-        case .Termination(let partBox) :
-            let result: Result = execute(partBox[0], lexer)
+            let result = actionBox[0](getter)
+            if let value = result { store(value) }
+            return result
+
+        case .Termination(let ruleBox) :
+            let result = execute(ruleBox[0], lexer)
             return lexer.done() ? result : nil
         }
-    }
-
-    // Getter for the current NT's parse results.
-    @lazy var getter: Getter = { [unowned self] index in self._values[self._ntbase + index - 1] }
-
-    /// Constructs a parser for a grammar with the given terminal symbols.
-    init (terminals: String[])
-    {
-        _ruleMap = Dictionary()
-        _partMap = Dictionary()
-        _values  = []
-        _stkptr  = 0
-        _ntbase  = 0
-
-        for name in terminals
-        {
-            _ruleMap[name] = true
-        }
-    }
-
-    /// Defines a parsing rule for the named nonterminal in the grammar.
-    func rule (name: String, parses part: Part)
-    {
-        _partMap[name] = part
-    }
-
-    /// Defines a parsing rule for the named nonterminal in the grammar.
-    func rule (name: String, parses symbol: String)
-    {
-        rule(name, parses: .RulePromise(symbol))
-    }
-
-    /// Parses the defined grammar starting with the given rule.
-    func start (part: Part, _ lexer: Lexer)
-    -> Result
-    {
-        _values = []
-        _stkptr = 0
-        _ntbase = 0
-
-        return execute(part, lexer)
-    }
-
-    /// Parses the defined grammar with the given start symbol.
-    func start (symbol: String, _ lexer: Lexer)
-    -> Result
-    {
-        return start(.RulePromise(symbol), lexer)
     }
 
 }   // class Parser
@@ -216,8 +272,7 @@ class Parser
 
 operator prefix  =< {}                                    // Transparent
 operator prefix  =! {}                                    // Transparent
-operator infix   &> { associativity left precedence 40 }  // Conjunction
-operator infix   !> { associativity left precedence 30 }  // Computation
+operator infix   &> { associativity left precedence 30 }  // Conjunction
 operator infix   <! { associativity left precedence 30 }  // Termination & Computation
 operator infix   |> { associativity left precedence 20 }  // Disjunction
 operator postfix <! {}                                    // Termination
@@ -226,163 +281,203 @@ operator postfix <! {}                                    // Termination
 /// =<`value`   (an Unconditional Success rule)
 /// Successfully parses an empty slice of input and returns the given value.
 @prefix func =< (value: Parser.Value)
--> Parser.Part
+-> Parser.Rule
 {
     return .Computation([{ _ in value }])
 }
 
 /// =!`action`   (an Unconditional Success rule)
 /// Successfully parses an empty slice of input and returns the action's value.
-@prefix func =! (action: Parser.Action)
--> Parser.Part
+@prefix func =! (block: Parser.Action)
+-> Parser.Rule
 {
-    return .Computation([action])
+    return .Computation([block])
 }
 
-/// `part` &> `part`
+/// `rule` &> `rule`
 /// Attempts to parse the conjunction of LHS and RHS sequentially.
-@infix func &> (lhsPart: Parser.Part, rhsPart: Parser.Part)
--> Parser.Part
+@infix func &> (lhsRule: Parser.Rule, rhsRule: Parser.Rule)
+-> Parser.Rule
 {
-    switch lhsPart
+    switch lhsRule
     {
     case .Conjunction(let lhsBody) :
-        var body = lhsBody
-        switch rhsPart
+        var body = lhsBody.copy()
+        switch rhsRule
         {
         case .Conjunction(let rhsBody) :
             body.extend(rhsBody)
             return .Conjunction(body)
 
         default :
-            body.append(rhsPart)
+            body.append(rhsRule)
             return .Conjunction(body)
         }
 
     default :
-        switch rhsPart
+        switch rhsRule
         {
         case .Conjunction(let rhsBody) :
-            var body = rhsBody
-            body.insert(lhsPart, atIndex: 0)
+            var body = rhsBody.copy()
+            body.insert(lhsRule, atIndex: 0)
             return .Conjunction(body)
 
         default :
-            return .Conjunction([lhsPart, rhsPart])
+            return .Conjunction([lhsRule, rhsRule])
         }
     }
 }
 
-@infix func &> (lhsPart: Parser.Part, rhsName: String)
--> Parser.Part
+@infix func &> (lhsRule: Parser.Rule, rhsBlock: Parser.Action)
+-> Parser.Rule
 {
-    return (lhsPart &> .RulePromise(rhsName))
+    return (lhsRule &> .Computation([rhsBlock]))
 }
 
-@infix func &> (lhsName: String, rhsPart: Parser.Part)
--> Parser.Part
+@infix func &> (lhsRule: Parser.Rule, rhsName: String)
+-> Parser.Rule
 {
-    return (.RulePromise(lhsName) &> rhsPart)
+    return (lhsRule &> .RulePromise(rhsName))
+}
+
+@infix func &> (lhsBlock: Parser.Action, rhsRule: Parser.Rule)
+-> Parser.Rule
+{
+    return (.Computation([lhsBlock]) &> rhsRule)
+}
+
+@infix func &> (lhsBlock: Parser.Action, rhsName: String)
+-> Parser.Rule
+{
+    return (.Computation([lhsBlock]) &> .RulePromise(rhsName))
+}
+
+@infix func &> (lhsName: String, rhsRule: Parser.Rule)
+-> Parser.Rule
+{
+    return (.RulePromise(lhsName) &> rhsRule)
+}
+
+@infix func &> (lhsName: String, rhsBlock: Parser.Action)
+-> Parser.Rule
+{
+    return (.RulePromise(lhsName) &> .Computation([rhsBlock]))
 }
 
 @infix func &> (lhsName: String, rhsName: String)
--> Parser.Part
+-> Parser.Rule
 {
     return .Conjunction([.RulePromise(lhsName), .RulePromise(rhsName)])
 }
 
-/// `part` |> `part`
+/// `rule` |> `rule`
 /// Attempts to parse LHS first and RHS afterwards, if LHS fails.
-@infix func |> (lhsPart: Parser.Part, rhsPart: Parser.Part)
--> Parser.Part
+@infix func |> (lhsRule: Parser.Rule, rhsRule: Parser.Rule)
+-> Parser.Rule
 {
-    switch lhsPart
+    switch lhsRule
     {
     case .Disjunction(let lhsBody) :
-        var body = lhsBody
-        switch rhsPart
+        var body = lhsBody.copy()
+        switch rhsRule
         {
         case .Disjunction(let rhsBody) :
             body.extend(rhsBody)
             return .Disjunction(body)
 
         default :
-            body.append(rhsPart)
+            body.append(rhsRule)
             return .Disjunction(body)
         }
 
     default :
-        switch rhsPart
+        switch rhsRule
         {
         case .Disjunction(let rhsBody) :
-            var body = rhsBody
-            body.insert(lhsPart, atIndex: 0)
+            var body = rhsBody.copy()
+            body.insert(lhsRule, atIndex: 0)
             return .Disjunction(body)
 
         default :
-            return .Disjunction([lhsPart, rhsPart])
+            return .Disjunction([lhsRule, rhsRule])
         }
     }
 }
 
-@infix func |> (lhsPart: Parser.Part, rhsName: String)
--> Parser.Part
+@infix func |> (lhsRule: Parser.Rule, rhsBlock: Parser.Action)
+-> Parser.Rule
 {
-    return (lhsPart |> .RulePromise(rhsName))
+    return (lhsRule |> .Computation([rhsBlock]))
 }
 
-@infix func |> (lhsName: String, rhsPart: Parser.Part)
--> Parser.Part
+@infix func |> (lhsRule: Parser.Rule, rhsName: String)
+-> Parser.Rule
 {
-    return (.RulePromise(lhsName) |> rhsPart)
+    return (lhsRule |> .RulePromise(rhsName))
+}
+
+@infix func |> (lhsBlock: Parser.Action, rhsRule: Parser.Rule)
+-> Parser.Rule
+{
+    return (.Computation([lhsBlock]) |> rhsRule)
+}
+
+@infix func |> (lhsBlock: Parser.Action, rhsName: String)
+-> Parser.Rule
+{
+    return (.Computation([lhsBlock]) |> .RulePromise(rhsName))
+}
+
+@infix func |> (lhsName: String, rhsRule: Parser.Rule)
+-> Parser.Rule
+{
+    return (.RulePromise(lhsName) |> rhsRule)
+}
+
+@infix func |> (lhsName: String, rhsBlock: Parser.Action)
+-> Parser.Rule
+{
+    return (.RulePromise(lhsName) |> .Computation([rhsBlock]))
 }
 
 @infix func |> (lhsName: String, rhsName: String)
--> Parser.Part
+-> Parser.Rule
 {
     return .Disjunction([.RulePromise(lhsName), .RulePromise(rhsName)])
 }
 
-/// `part` !> `action`
-/// Returns the actions's value if the rule could be parsed.
-@infix func !> (condition: Parser.Part, action: Parser.Action)
--> Parser.Part
-{
-    return (condition &> .Computation([action]))
-}
-
-@infix func !> (condName: String, action: Parser.Action)
--> Parser.Part
-{
-    return (.RulePromise(condName) &> .Computation([action]))
-}
-
-/// `part`<!
+/// `rule`<!
 /// Asserts End-Of-Input (EOI) after parsing the preceding rule.
-@postfix func <! (part: Parser.Part)
--> Parser.Part
+@postfix func <! (rule: Parser.Rule)
+-> Parser.Rule
 {
-    return .Termination([part])
+    return .Termination([rule])
 }
 
 @postfix func <! (name: String)
--> Parser.Part
+-> Parser.Rule
 {
     return .Termination([.RulePromise(name)])
 }
 
-/// `part` <! `action`
-/// Asserts EOI after parsing the rule, then returns the action's value.
-@infix func <! (condition: Parser.Part, action: Parser.Action)
--> Parser.Part
+@postfix func <! (block: Parser.Action)
+-> Parser.Rule
 {
-    return (.Termination([condition]) &> .Computation([action]))
+    return .Termination([.Computation([block])])
 }
 
-@infix func <! (condName: String, action: Parser.Action)
--> Parser.Part
+/// `rule` <! `action`
+/// Asserts EOI after parsing the rule, then returns the action's value.
+@infix func <! (condition: Parser.Rule, block: Parser.Action)
+-> Parser.Rule
 {
-    return (.Termination([.RulePromise(condName)]) &> .Computation([action]))
+    return (.Termination([condition]) &> .Computation([block]))
+}
+
+@infix func <! (condName: String, block: Parser.Action)
+-> Parser.Rule
+{
+    return (.Termination([.RulePromise(condName)]) &> .Computation([block]))
 }
 
 /// Sequence construction utility for use in rule actions.
