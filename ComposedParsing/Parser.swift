@@ -89,6 +89,12 @@ class Parser
         rule(name, parses: .RulePromise(symbol))
     }
 
+    /// Defines a parsing rule for the named nonterminal in the grammar.
+    func rule (name: String, parses block: Parser.Action)
+    {
+        rule(name, parses: .Computation([block]))
+    }
+
     /// Parses the defined grammar starting with the given rule.
     func start (rule: Rule, _ lexer: Lexer)
     -> Result
@@ -166,6 +172,10 @@ class Parser
                 switch newRule
                 {
                 case .NestedParse(_) :
+                    break
+                case .TerminalLex(_) :
+                    break
+                case .Computation(_) :
                     break
                 default :
                     newRule = .NestedParse([newRule])
@@ -268,7 +278,6 @@ class Parser
 /// Rule Compositions
 
 operator prefix  =< {}                                    // Transparent
-operator prefix  =! {}                                    // Transparent
 operator infix   &> { associativity left precedence 40 }  // Conjunction
 operator infix   <! { associativity left precedence 30 }  // Termination & Computation
 operator infix   |> { associativity left precedence 20 }  // Disjunction
@@ -281,14 +290,6 @@ operator postfix <! {}                                    // Termination
 -> Parser.Rule
 {
     return .Computation([{ _ in value }])
-}
-
-/// =!`action`   (an Unconditional Success rule)
-/// Successfully parses an empty slice of input and returns the action's value.
-@prefix func =! (block: Parser.Action)
--> Parser.Rule
-{
-    return .Computation([block])
 }
 
 /// `rule` &> `rule`
@@ -465,16 +466,16 @@ operator postfix <! {}                                    // Termination
 
 /// `rule` <! `action`
 /// Asserts EOI after parsing the rule, then returns the action's value.
-@infix func <! (condition: Parser.Rule, block: Parser.Action)
+@infix func <! (rule: Parser.Rule, block: Parser.Action)
 -> Parser.Rule
 {
-    return (.Termination([condition]) &> .Computation([block]))
+    return (.Termination([rule]) &> .Computation([block]))
 }
 
-@infix func <! (condName: String, block: Parser.Action)
+@infix func <! (name: String, block: Parser.Action)
 -> Parser.Rule
 {
-    return (.Termination([.RulePromise(condName)]) &> .Computation([block]))
+    return (.Termination([.RulePromise(name)]) &> .Computation([block]))
 }
 
 /// Sequence construction utility for use in rule actions.
