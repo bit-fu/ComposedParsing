@@ -18,11 +18,11 @@ import Foundation
 /// A primitive token source that consumes a fixed array.
 class ArrayLexer : Lexer
 {
-    var _tokens: Token[]
+    var _tokens: [Token]
     var _index: Int
     var _limit: Int
 
-    init (tokens: Token[])
+    init (tokens: [Token])
     {
         _tokens = tokens
         _index  = tokens.startIndex

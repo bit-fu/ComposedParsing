@@ -70,7 +70,7 @@ for _ in 1...1000
 }
 let t1 = NSDate()
 let dt = t1.timeIntervalSinceDate(t0)
-println("∆t = \(dt) s\n\(val)")
+println("∆t = \(dt) s\n\(val!)")
 
 
 /* ~ main.swift ~ */

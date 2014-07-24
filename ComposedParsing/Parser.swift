@@ -63,7 +63,7 @@ class Parser
     /// —— Public Methods ——
 
     /// Constructs a parser for a grammar with the given terminal symbols.
-    init (terminals: String[])
+    init (terminals: [String])
     {
         _tsRule = Dictionary()
         _ntRule = Dictionary()
@@ -120,21 +120,21 @@ class Parser
     {
         case RulePromise(String)
         case TerminalLex(String)
-        case NestedParse(Rule[])    // Boxing Array
-        case Conjunction(Rule[])    // Actual Array
-        case Disjunction(Rule[])    // Actual Array
-        case Computation(Action[])  // Boxing Array
-        case Termination(Rule[])    // Boxing Array
+        case NestedParse([Rule])    // Boxing Array
+        case Conjunction([Rule])    // Actual Array
+        case Disjunction([Rule])    // Actual Array
+        case Computation([Action])  // Boxing Array
+        case Termination([Rule])    // Boxing Array
     }
 
     var _tsRule: Dictionary<String, Bool>
     var _ntRule: Dictionary<String, Rule>
-    var _values: Value[]
+    var _values: [Value]
     var _stkptr: Int
     var _ntbase: Int
 
     // Getter for the current NT's parse results.
-    @lazy var getter: Getter = { [unowned self] index in self._values[self._ntbase + index - 1] }
+    lazy var getter: Getter = { [unowned self] index in self._values[self._ntbase + index - 1] }
 
     func store (value: Value)
     {
@@ -150,7 +150,7 @@ class Parser
     }
 
     // Destructive rule preprocessor.
-    func compile (rule: Rule, _ ntNames: String[] = [])
+    func compile (rule: Rule, _ ntNames: [String] = [])
     -> Rule
     {
         switch rule
@@ -165,7 +165,7 @@ class Parser
                 var newRule = namedRule
                 if !contains(ntNames, name)
                 {
-                    var moreNames = ntNames.copy()
+                    var moreNames = ntNames
                     moreNames.append(name)
                     newRule = compile(namedRule, moreNames)
                 }
@@ -186,21 +186,21 @@ class Parser
             println("Parser error: Undefined symbol “\(name)”")
             return .Disjunction([])     // Constant Failure.
 
-        case .Conjunction(let body) :
-            for index in 0..body.count
+        case .Conjunction(var body) :
+            for index in 0..<body.count
             {
                 body[index] = compile(body[index], ntNames)
             }
             return rule
 
-        case .Disjunction(let body) :
-            for index in 0..body.count
+        case .Disjunction(var body) :
+            for index in 0..<body.count
             {
                 body[index] = compile(body[index], ntNames)
             }
             return rule
 
-        case .Termination(let ruleBox) :
+        case .Termination(var ruleBox) :
             ruleBox[0] = compile(ruleBox[0], ntNames)
             return rule
 
@@ -252,7 +252,7 @@ class Parser
         case .Disjunction(let body) :
             let stkptr = _stkptr
             let mark = lexer.tell()
-            for index in 0..body.count
+            for index in 0..<body.count
             {
                 let result = execute(body[index], lexer)
                 if result { return result }
@@ -300,7 +300,7 @@ operator postfix <! {}                                    // Termination
     switch lhsRule
     {
     case .Conjunction(let lhsBody) :
-        var body = lhsBody.copy()
+        var body = lhsBody
         switch rhsRule
         {
         case .Conjunction(let rhsBody) :
@@ -316,7 +316,7 @@ operator postfix <! {}                                    // Termination
         switch rhsRule
         {
         case .Conjunction(let rhsBody) :
-            var body = rhsBody.copy()
+            var body = rhsBody
             body.insert(lhsRule, atIndex: 0)
             return .Conjunction(body)
 
@@ -376,7 +376,7 @@ operator postfix <! {}                                    // Termination
     switch lhsRule
     {
     case .Disjunction(let lhsBody) :
-        var body = lhsBody.copy()
+        var body = lhsBody
         switch rhsRule
         {
         case .Disjunction(let rhsBody) :
@@ -392,7 +392,7 @@ operator postfix <! {}                                    // Termination
         switch rhsRule
         {
         case .Disjunction(let rhsBody) :
-            var body = rhsBody.copy()
+            var body = rhsBody
             body.insert(lhsRule, atIndex: 0)
             return .Disjunction(body)
 
@@ -480,9 +480,9 @@ operator postfix <! {}                                    // Termination
 
 /// Sequence construction utility for use in rule actions.
 func cons (car: AnyObject, cdr: AnyObject)
--> AnyObject[]
+-> [AnyObject]
 {
-    var list = cdr as AnyObject[];
+    var list = cdr as [AnyObject];
     list.insert(car, atIndex: 0)
     return list
 }

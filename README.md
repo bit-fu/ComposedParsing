@@ -3,6 +3,8 @@ ComposedParsing
 
 A simple parser definition utility in Swift using composable functions for rules.
 
+Note: It was working as intended (somewhat) with Xcode6-Beta2.  Then, I've made adjustments for the revised syntax for Beta3, and now (Beta4), it only works with a Debug build.  If you switch to Release build, you'll get an entertaining error at runtime.  I'm still holding out hope that it will eventually work again, when Swift kaputtness has been repaired.
+
 This is how a simple grammar for standard arithmetics might look like:
 
 ```swift
@@ -140,19 +142,21 @@ Every operand of the composition functions, if parsed successfully, returns a va
 
 Action blocks also have a return value whose type is identical to the terminal and nonterminal types.  Thus, your action return value can become the value of the nonterminal it belongs to (like in the example above).
 
-If your action returns `nil`, it is viewed as a failed parse.  Otherwise the value is stored in the place that corresponds to the action's position in the rule, and is available to later actions as `$(`*`n`*`)` (if they name their argument `$`).
+If your action returns `nil`, it is viewed as a failed parse.  Otherwise the value is stored in the place that corresponds to the action's position in the rule, and is available to later actions as `$(N)` (where `N` is the position number of the previous rule).
 
 ## Known Shortcomings
 
-- There are no warnings for any conflicts and syntax errors in rule definitions will produce strange messages.
+- The implementation of Swift seems still quite unstable, making this source (temporarily?) nonfunctional.
+- There are no warnings for any conflicts.
+- Syntax errors in rule definitions will produce strange messages.
 - The parser doesn't do left-associative rules naturally.
 - `parser.rule("foo", parses: "foo" |> ...)` *will* create a Stack Overflow® via infinite recursion, without prior warning.
 
 ## Good Points
 
 - Type inference is your friend.  You need no boiler plate or syntactic sugar to formulate rules in the Parser's composition language.
-- If you write reasonably efficient rules, the machine will waste no time getting your input parsed.  The internal representation is consciously chosen so it can be manipulated into speedy processing.  The fact that even “constant” arrays have mutable elements in Swift is quite helpful here.
+- If you write reasonably efficient rules, the machine will waste no time getting your input parsed.  The internal representation is consciously chosen so it can be manipulated into speedy processing.
 
 ## Remarks
 
-This project was inspired by  [swift-parser-generator](https://github.com/dparnell/swift-parser-generator), but also aims to be different.  I still want the Lexer to do low level work like converting digit strings to numbers.  By writing a Lexer yourself, you at least have the chance to maximize efficiency there, while in parser rules you don't have so much sway.
+This project was inspired by  [swift-parser-generator](https://github.com/dparnell/swift-parser-generator), but also aims to be different.  I still want the Lexer to do low level work like converting digit strings to numbers.  By writing a Lexer yourself, you at least have the chance to maximise efficiency there, while in parser rules you don't have so much sway.
