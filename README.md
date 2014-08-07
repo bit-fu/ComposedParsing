@@ -133,7 +133,7 @@ parser.rule("numWord", parses: "num" &> "word" &> { $ in
 		let w = $(2) as NSString
 		println("\(n) \(w)")
 		return true
-	})
+	})
 ```
 
 The action block is passed one argument, which is a value getter function.  Here, it is named `$`.  The argument you pass to the getter is the position number, in the current rule, of the element whose value you want to obtain.  The first rule element has the number 1.
