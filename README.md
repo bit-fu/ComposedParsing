@@ -3,7 +3,7 @@ ComposedParsing
 
 A simple parser definition utility in Swift using composable functions for rules.
 
-Note: It was working as intended (somewhat) with Xcode6-Beta2.  Then, I've made adjustments for the revised syntax for Beta3, and now (Beta4), it only works with a Debug build.  If you switch to Release build, you'll get an entertaining error at runtime.  I'm still holding out hope that it will eventually work again, when Swift kaputtness has been repaired.
+With Xcode6-Beta5, it's working again.
 
 This is how a simple grammar for standard arithmetics might look like:
 
@@ -146,8 +146,7 @@ If your action returns `nil`, it is viewed as a failed parse.  Otherwise the val
 
 ## Known Shortcomings
 
-- The implementation of Swift seems still quite unstable, making this source (temporarily?) nonfunctional.
-- There are no warnings for any conflicts.
+- There are no warnings for any rule conflicts or generally bad rule constructions.
 - Syntax errors in rule definitions will produce strange messages.
 - The parser doesn't do left-associative rules naturally.
 - `parser.rule("foo", parses: "foo" |> ...)` *will* create a Stack Overflow® via infinite recursion, without prior warning.
@@ -155,7 +154,7 @@ If your action returns `nil`, it is viewed as a failed parse.  Otherwise the val
 ## Good Points
 
 - Type inference is your friend.  You need no boiler plate or syntactic sugar to formulate rules in the Parser's composition language.
-- If you write reasonably efficient rules, the machine will waste no time getting your input parsed.  The internal representation is consciously chosen so it can be manipulated into speedy processing.
+- If you write reasonably efficient rules, the machine will waste no time getting your input parsed.  The internal representation of rules is consciously chosen so the Parser can manipulate it into speedy processing.
 
 ## Remarks
 
