@@ -1,16 +1,16 @@
 /*  ————————————————————————————————————————————————————————————————————————  *
-*
-*      ArrayLexer.swift
-*      ~~~~~~~~~~~~~~~~
-*
-*      Model class for a token source
-*
-*      Project:            ComposedParsing
-*
-*      File encoding:      UTF-8
-*
-*      2014·06·26          Created by Ulrich Singer
-*/
+ *
+ *      ArrayLexer.swift
+ *      ~~~~~~~~~~~~~~~~
+ *
+ *      Model class for a token source
+ *
+ *      Project:            ComposedParsing
+ *
+ *      File encoding:      UTF-8
+ *
+ *      Created 2014·06·26: Ulrich Singer
+ */
 
 import Foundation
 

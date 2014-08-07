@@ -9,7 +9,7 @@
  *
  *      File encoding:      UTF-8
  *
- *      2014·06·26          Created by Ulrich Singer
+ *      Created 2014·06·26: Ulrich Singer
  */
 
 import Foundation
