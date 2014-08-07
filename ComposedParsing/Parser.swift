@@ -202,7 +202,7 @@ class Parser
 
         case .Termination(var ruleBox) :
             ruleBox[0] = compile(ruleBox[0], ntNames)
-            return rule
+            return .Termination(ruleBox)
 
         default :
             return rule
