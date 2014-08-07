@@ -191,14 +191,14 @@ class Parser
             {
                 body[index] = compile(body[index], ntNames)
             }
-            return rule
+            return .Conjunction(body)
 
         case .Disjunction(var body) :
             for index in 0..<body.count
             {
                 body[index] = compile(body[index], ntNames)
             }
-            return rule
+            return .Disjunction(body)
 
         case .Termination(var ruleBox) :
             ruleBox[0] = compile(ruleBox[0], ntNames)
