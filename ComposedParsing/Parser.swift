@@ -9,7 +9,7 @@
  *
  *      File encoding:      UTF-8
  *
- *      2014·06·26          Created by Ulrich Singer
+ *      Created 2014·06·26: Ulrich Singer
  */
 
 import Foundation
@@ -92,7 +92,7 @@ class Parser
     /// Defines a parsing rule for the named nonterminal in the grammar.
     func rule (name: String, parses block: Parser.Action)
     {
-        rule(name, parses: .Computation([block]))
+        rule(name, parses: .Computation(block))
     }
 
     /// Parses the defined grammar starting with the given rule.
@@ -123,7 +123,7 @@ class Parser
         case NestedParse([Rule])    // Boxing Array
         case Conjunction([Rule])    // Actual Array
         case Disjunction([Rule])    // Actual Array
-        case Computation([Action])  // Boxing Array
+        case Computation(Action)
         case Termination([Rule])    // Boxing Array
     }
 
@@ -243,7 +243,7 @@ class Parser
             var index = 0
             let count = body.count
             var latest: Result = true
-            while latest && index < count
+            while latest != nil && index < count
             {
                 latest = execute(body[index++], lexer)
             }
@@ -255,14 +255,14 @@ class Parser
             for index in 0..<body.count
             {
                 let result = execute(body[index], lexer)
-                if result { return result }
+                if result != nil { return result }
                 _stkptr = stkptr
                 lexer.seek(mark)
             }
             return nil
 
-        case .Computation(let actionBox) :
-            let result = actionBox[0](getter)
+        case .Computation(let actionBlock) :
+            let result = actionBlock(getter)
             if let value = result { store(value) }
             return result
 
@@ -277,24 +277,24 @@ class Parser
 
 /// Rule Compositions
 
-operator prefix  =< {}                                    // Transparent
-operator infix   &> { associativity left precedence 40 }  // Conjunction
-operator infix   <! { associativity left precedence 30 }  // Termination & Computation
-operator infix   |> { associativity left precedence 20 }  // Disjunction
-operator postfix <! {}                                    // Termination
+prefix  operator =< {}                                    // Transparent
+infix   operator &> { associativity left precedence 40 }  // Conjunction
+infix   operator <! { associativity left precedence 30 }  // Termination & Computation
+infix   operator |> { associativity left precedence 20 }  // Disjunction
+postfix operator <! {}                                    // Termination
 
 
 /// =<`value`   (an Unconditional Success rule)
 /// Successfully parses an empty slice of input and returns the given value.
-@prefix func =< (value: Parser.Value)
+prefix func =< (value: Parser.Value)
 -> Parser.Rule
 {
-    return .Computation([{ _ in value }])
+    return .Computation({ _ in value })
 }
 
 /// `rule` &> `rule`
 /// Attempts to parse the conjunction of LHS and RHS sequentially.
-@infix func &> (lhsRule: Parser.Rule, rhsRule: Parser.Rule)
+func &> (lhsRule: Parser.Rule, rhsRule: Parser.Rule)
 -> Parser.Rule
 {
     switch lhsRule
@@ -326,43 +326,43 @@ operator postfix <! {}                                    // Termination
     }
 }
 
-@infix func &> (lhsRule: Parser.Rule, rhsBlock: Parser.Action)
+func &> (lhsRule: Parser.Rule, rhsBlock: Parser.Action)
 -> Parser.Rule
 {
-    return (lhsRule &> .Computation([rhsBlock]))
+    return (lhsRule &> .Computation(rhsBlock))
 }
 
-@infix func &> (lhsRule: Parser.Rule, rhsName: String)
+func &> (lhsRule: Parser.Rule, rhsName: String)
 -> Parser.Rule
 {
     return (lhsRule &> .RulePromise(rhsName))
 }
 
-@infix func &> (lhsBlock: Parser.Action, rhsRule: Parser.Rule)
+func &> (lhsBlock: Parser.Action, rhsRule: Parser.Rule)
 -> Parser.Rule
 {
-    return (.Computation([lhsBlock]) &> rhsRule)
+    return (.Computation(lhsBlock) &> rhsRule)
 }
 
-@infix func &> (lhsBlock: Parser.Action, rhsName: String)
+func &> (lhsBlock: Parser.Action, rhsName: String)
 -> Parser.Rule
 {
-    return (.Computation([lhsBlock]) &> .RulePromise(rhsName))
+    return (.Computation(lhsBlock) &> .RulePromise(rhsName))
 }
 
-@infix func &> (lhsName: String, rhsRule: Parser.Rule)
+func &> (lhsName: String, rhsRule: Parser.Rule)
 -> Parser.Rule
 {
     return (.RulePromise(lhsName) &> rhsRule)
 }
 
-@infix func &> (lhsName: String, rhsBlock: Parser.Action)
+func &> (lhsName: String, rhsBlock: Parser.Action)
 -> Parser.Rule
 {
-    return (.RulePromise(lhsName) &> .Computation([rhsBlock]))
+    return (.RulePromise(lhsName) &> .Computation(rhsBlock))
 }
 
-@infix func &> (lhsName: String, rhsName: String)
+func &> (lhsName: String, rhsName: String)
 -> Parser.Rule
 {
     return .Conjunction([.RulePromise(lhsName), .RulePromise(rhsName)])
@@ -370,7 +370,7 @@ operator postfix <! {}                                    // Termination
 
 /// `rule` |> `rule`
 /// Attempts to parse LHS first and RHS afterwards, if LHS fails.
-@infix func |> (lhsRule: Parser.Rule, rhsRule: Parser.Rule)
+func |> (lhsRule: Parser.Rule, rhsRule: Parser.Rule)
 -> Parser.Rule
 {
     switch lhsRule
@@ -402,43 +402,43 @@ operator postfix <! {}                                    // Termination
     }
 }
 
-@infix func |> (lhsRule: Parser.Rule, rhsBlock: Parser.Action)
+func |> (lhsRule: Parser.Rule, rhsBlock: Parser.Action)
 -> Parser.Rule
 {
-    return (lhsRule |> .Computation([rhsBlock]))
+    return (lhsRule |> .Computation(rhsBlock))
 }
 
-@infix func |> (lhsRule: Parser.Rule, rhsName: String)
+func |> (lhsRule: Parser.Rule, rhsName: String)
 -> Parser.Rule
 {
     return (lhsRule |> .RulePromise(rhsName))
 }
 
-@infix func |> (lhsBlock: Parser.Action, rhsRule: Parser.Rule)
+func |> (lhsBlock: Parser.Action, rhsRule: Parser.Rule)
 -> Parser.Rule
 {
-    return (.Computation([lhsBlock]) |> rhsRule)
+    return (.Computation(lhsBlock) |> rhsRule)
 }
 
-@infix func |> (lhsBlock: Parser.Action, rhsName: String)
+func |> (lhsBlock: Parser.Action, rhsName: String)
 -> Parser.Rule
 {
-    return (.Computation([lhsBlock]) |> .RulePromise(rhsName))
+    return (.Computation(lhsBlock) |> .RulePromise(rhsName))
 }
 
-@infix func |> (lhsName: String, rhsRule: Parser.Rule)
+func |> (lhsName: String, rhsRule: Parser.Rule)
 -> Parser.Rule
 {
     return (.RulePromise(lhsName) |> rhsRule)
 }
 
-@infix func |> (lhsName: String, rhsBlock: Parser.Action)
+func |> (lhsName: String, rhsBlock: Parser.Action)
 -> Parser.Rule
 {
-    return (.RulePromise(lhsName) |> .Computation([rhsBlock]))
+    return (.RulePromise(lhsName) |> .Computation(rhsBlock))
 }
 
-@infix func |> (lhsName: String, rhsName: String)
+func |> (lhsName: String, rhsName: String)
 -> Parser.Rule
 {
     return .Disjunction([.RulePromise(lhsName), .RulePromise(rhsName)])
@@ -446,43 +446,43 @@ operator postfix <! {}                                    // Termination
 
 /// `rule`<!
 /// Asserts End-Of-Input (EOI) after parsing the preceding rule.
-@postfix func <! (rule: Parser.Rule)
+postfix func <! (rule: Parser.Rule)
 -> Parser.Rule
 {
     return .Termination([rule])
 }
 
-@postfix func <! (name: String)
+postfix func <! (name: String)
 -> Parser.Rule
 {
     return .Termination([.RulePromise(name)])
 }
 
-@postfix func <! (block: Parser.Action)
+postfix func <! (block: Parser.Action)
 -> Parser.Rule
 {
-    return .Termination([.Computation([block])])
+    return .Termination([.Computation(block)])
 }
 
 /// `rule` <! `action`
 /// Asserts EOI after parsing the rule, then returns the action's value.
-@infix func <! (rule: Parser.Rule, block: Parser.Action)
+func <! (rule: Parser.Rule, block: Parser.Action)
 -> Parser.Rule
 {
-    return (.Termination([rule]) &> .Computation([block]))
+    return (.Termination([rule]) &> .Computation(block))
 }
 
-@infix func <! (name: String, block: Parser.Action)
+func <! (name: String, block: Parser.Action)
 -> Parser.Rule
 {
-    return (.Termination([.RulePromise(name)]) &> .Computation([block]))
+    return (.Termination([.RulePromise(name)]) &> .Computation(block))
 }
 
 /// Sequence construction utility for use in rule actions.
 func cons (car: AnyObject, cdr: AnyObject)
 -> [AnyObject]
 {
-    var list = cdr as [AnyObject];
+    var list = ((cdr as? [AnyObject]) != nil) ? (cdr as [AnyObject]) : [cdr]
     list.insert(car, atIndex: 0)
     return list
 }
