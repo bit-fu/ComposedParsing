@@ -117,7 +117,7 @@ or
 RULE <! ACTION
 ```
 
-After the `RULE` parsed successfully, the termination operator verifies that the Lexer has no tokens left, and if so, returns the `RULE`'s value.  If the Lexer has still tokens left, the operator fails.
+After the `RULE` parses successfully, the termination operator verifies that the Lexer has no tokens left, and if so, returns the `RULE`'s value.  If the Lexer has still tokens left, the operator fails.
 
 The second form doesn't necessarily return the `RULE`'s value but the value of your `ACTION` code block, if the operator succeeds.
 
@@ -133,7 +133,7 @@ parser.rule("numWord", parses: "num" &> "word" &> { $ in
 		let w = $(2) as NSString
 		println("\(n) \(w)")
 		return true
-	}})
+	})
 ```
 
 The action block is passed one argument, which is a value getter function.  Here, it is named `$`.  The argument you pass to the getter is the position number, in the current rule, of the element whose value you want to obtain.  The first rule element has the number 1.
