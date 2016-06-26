@@ -15,11 +15,11 @@ arithmetic.rule("sum", parses: "mul" &> "sumTail")
 
 arithmetic.rule("sumTail", parses:
     "+" &> "mul"
-        &> { $ in ($(0) as NSNumber).doubleValue + ($(2) as NSNumber).doubleValue }
+        &> { $ in ($(0) as! NSNumber).doubleValue + ($(2) as! NSNumber).doubleValue }
         &> "sumTail"
 
  |> "-" &> "mul"
-        &> { $ in ($(0) as NSNumber).doubleValue - ($(2) as NSNumber).doubleValue }
+        &> { $ in ($(0) as! NSNumber).doubleValue - ($(2) as! NSNumber).doubleValue }
         &> "sumTail"
 
  |> { $ in $(0) })
@@ -28,22 +28,22 @@ arithmetic.rule("mul", parses: "sgn" &> "mulTail")
 
 arithmetic.rule("mulTail", parses:
     "*" &> "sgn"
-        &> { $ in ($(0) as NSNumber).doubleValue * ($(2) as NSNumber).doubleValue }
+        &> { $ in ($(0) as! NSNumber).doubleValue * ($(2) as! NSNumber).doubleValue }
         &> "mulTail"
 
  |> "/" &> "sgn"
-        &> { $ in ($(0) as NSNumber).doubleValue / ($(2) as NSNumber).doubleValue }
+        &> { $ in ($(0) as! NSNumber).doubleValue / ($(2) as! NSNumber).doubleValue }
         &> "mulTail"
 
  |> "%" &> "sgn"
-        &> { $ in ($(0) as NSNumber).doubleValue % ($(2) as NSNumber).doubleValue }
+        &> { $ in ($(0) as! NSNumber).doubleValue % ($(2) as! NSNumber).doubleValue }
         &> "mulTail"
 
  |> { $ in $(0) })
 
 arithmetic.rule("sgn", parses:
-    "-" &> "sgn" &> { $ in -($(2) as NSNumber).doubleValue }
- |> "+" &> "sgn" &> { $ in +($(2) as NSNumber).doubleValue }
+    "-" &> "sgn" &> { $ in -($(2) as! NSNumber).doubleValue }
+ |> "+" &> "sgn" &> { $ in +($(2) as! NSNumber).doubleValue }
  |> "term")
 
 arithmetic.rule("term", parses:
@@ -127,8 +127,8 @@ Let's add an action to the last rule of our parser example above:
 
 ```swift
 parser.rule("numWord", parses: "num" &> "word" &> { $ in
-		let n = $(1) as NSNumber
-		let w = $(2) as NSString
+		let n = $(1) as! NSNumber
+		let w = $(2) as! NSString
 		println("\(n) \(w)")
 		return true
 	})
