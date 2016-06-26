@@ -28,12 +28,12 @@ class ArrayLexer : Lexer
         _index  = tokens.startIndex
         _limit  = tokens.endIndex
     }
-    
+
     func reset ()
     {
         _index  = _tokens.startIndex
     }
-    
+
     /// <Lexer> Conformity
 
     func next () -> Token?

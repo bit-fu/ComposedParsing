@@ -3,8 +3,6 @@ ComposedParsing
 
 A simple parser definition utility in Swift using composable functions for rules.
 
-With Xcode6-Beta5, it's working again.
-
 This is how a simple grammar for standard arithmetics might look like:
 
 ```swift

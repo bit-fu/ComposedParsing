@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4029EB921960439C004ABD48 /* ArrayLexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4029EB911960439C004ABD48 /* ArrayLexer.swift */; };
+		40462E0E19B349EB000CFDDE /* ArrayLexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4029EB911960439C004ABD48 /* ArrayLexer.swift */; };
 		40D20029195F451C00D8B49C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D20028195F451C00D8B49C /* main.swift */; };
 		40D20030195F455C00D8B49C /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D2002F195F455C00D8B49C /* Parser.swift */; };
 /* End PBXBuildFile section */
@@ -94,7 +94,9 @@
 		40D2001D195F451C00D8B49C /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0600;
+				LastSwiftMigration = 0710;
+				LastSwiftUpdateCheck = 0710;
+				LastUpgradeCheck = 0710;
 				ORGANIZATIONNAME = "Ulrich Singer";
 				TargetAttributes = {
 					40D20024195F451C00D8B49C = {
@@ -125,7 +127,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				40D20030195F455C00D8B49C /* Parser.swift in Sources */,
-				4029EB921960439C004ABD48 /* ArrayLexer.swift in Sources */,
+				40462E0E19B349EB000CFDDE /* ArrayLexer.swift in Sources */,
 				40D20029195F451C00D8B49C /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -152,6 +154,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;

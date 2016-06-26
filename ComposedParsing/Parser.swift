@@ -29,7 +29,7 @@ protocol Lexer
 
     /// Moves to the given position in the underlying input stream,
     /// undoing token consumption from that position onward.
-    func seek (Int)
+    func seek (_: Int)
 
     /// Returns `true` if all tokens have been consumed.
     /// Note that a `seek()` might revert this state.
@@ -163,7 +163,7 @@ class Parser
             if let namedRule = _ntRule[name]
             {
                 var newRule = namedRule
-                if !contains(ntNames, name)
+                if !ntNames.contains(name)
                 {
                     var moreNames = ntNames
                     moreNames.append(name)
@@ -183,7 +183,7 @@ class Parser
                 _ntRule[name] = newRule
                 return newRule
             }
-            println("Parser error: Undefined symbol “\(name)”")
+            print("Parser error: Undefined symbol “\(name)”")
             return .Disjunction([])     // Constant Failure.
 
         case .Conjunction(var body) :
@@ -304,7 +304,7 @@ func &> (lhsRule: Parser.Rule, rhsRule: Parser.Rule)
         switch rhsRule
         {
         case .Conjunction(let rhsBody) :
-            body.extend(rhsBody)
+            body.appendContentsOf(rhsBody)
             return .Conjunction(body)
 
         default :
@@ -380,7 +380,7 @@ func |> (lhsRule: Parser.Rule, rhsRule: Parser.Rule)
         switch rhsRule
         {
         case .Disjunction(let rhsBody) :
-            body.extend(rhsBody)
+            body.appendContentsOf(rhsBody)
             return .Disjunction(body)
 
         default :
@@ -482,7 +482,7 @@ func <! (name: String, block: Parser.Action)
 func cons (car: AnyObject, cdr: AnyObject)
 -> [AnyObject]
 {
-    var list = ((cdr as? [AnyObject]) != nil) ? (cdr as [AnyObject]) : [cdr]
+    var list = ((cdr as? [AnyObject]) != nil) ? (cdr as! [AnyObject]) : [cdr]
     list.insert(car, atIndex: 0)
     return list
 }
